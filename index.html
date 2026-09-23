@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deutsch Dashboard</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: transparent;
+            margin: 0;
+            height: 100vh;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .card {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            padding: 20px;
+            width: 340px;
+            height: 480px;
+            text-align: center;
+            cursor: grab;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:active { cursor: grabbing; }
+
+        .vocab-card { top: 20px; left: 20px; border-top: 4px solid #0078d4; }
+        .grammar-card { top: 20px; left: 380px; border-top: 4px solid #107c10; }
+        .info-card { top: 20px; left: 740px; border-top: 4px solid #d83b01; }
+
+        .drag-handle {
+            text-align: center;
+            color: #ccc;
+            font-size: 0.9em;
+            margin-bottom: 12px;
+            font-weight: 600;
+            letter-spacing: 1px;
+        }
+
+        /* --- VOCAB STYLES (Stacked: 1 column, 2 rows) --- */
+        .vocab-item {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding-bottom: 15px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #e0e0e0;
+        }
+        .vocab-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+        .word {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 4px;
+        }
+        .meaning {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 8px;
+            font-style: italic;
+        }
+        .example {
+            text-align: left;
+            background: #f8f9fa;
+            padding: 8px;
+            border-radius: 6px;
+            font-size: 0.8em;
+            color: #333;
+            line-height: 1.4;
+            border-left: 3px solid #0078d4;
+        }
+
+        /* --- GRAMMAR STYLES (Fills tile completely) --- */
+        .topic {
+            font-size: 1.3em;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 8px;
+        }
+        .pattern {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 15px;
+            font-style: italic;
+            line-height: 1.4;
+        }
+        .grammar-card .example {
+            border-left: 3px solid #107c10;
+            margin-bottom: 10px;
+        }
+        .note {
+            background: #fff3cd;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.78em;
+            color: #856404;
+            margin-top: auto;
+            text-align: left;
+            line-height: 1.4;
+        }
+
+        /* --- INFO CARD STYLES (2 Rows: News Top, Weather Bottom) --- */
+        .info-section {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+        .section-title {
+            font-size: 0.85em;
+            font-weight: bold;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+        }
+        .divider {
+            height: 1px;
+            background: #e0e0e0;
+            margin: 5px 0 15px 0;
+        }
+        .info-card .headline {
+            font-size: 1.1em;
+            font-weight: bold;
+            color: #1a1a1a;
+            margin-bottom: 6px;
+            line-height: 1.3;
+        }
+        .info-card .date {
+            font-size: 0.75em;
+            color: #999;
+            margin-bottom: 6px;
+        }
+        .info-card .example {
+            border-left: 3px solid #d83b01;
+            font-size: 0.8em;
+        }
+        
+        .weather-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 6px 0;
+            border-bottom: 1px solid #f0f0f0;
+            font-size: 0.9em;
+        }
+        .weather-row:last-child { border-bottom: none; }
+        .weather-day { font-weight: 600; color: #333; }
+        .weather-desc { color: #666; font-size: 0.85em; flex: 1; text-align: center; }
+        .weather-temp { font-weight: bold; color: #d83b01; }
+
+        .highlight { color: #0078d4; font-weight: bold; }
+        .grammar-card .highlight { color: #107c10; font-weight: bold; }
+
+        button {
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 0.85em;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-top: 10px;
+            transition: background 0.2s;
+        }
+        .vocab-card button { background-color: #0078d4; }
+        .vocab-card button:hover { background-color: #005a9e; }
+        .grammar-card button { background-color: #107c10; }
+        .grammar-card button:hover { background-color: #0b5a0b; }
+        .info-card button { background-color: #d83b01; }
+        .info-card button:hover { background-color: #a52d00; }
+
+        .fade-out { opacity: 0; transition: opacity 0.4s ease-in-out; }
+        .word, .meaning, .example, .topic, .pattern, .note, .headline, .date, .weather-row {
+            transition: opacity 0.4s ease-in-out;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 1. VOCAB CARD: 1 column, 2 rows (stacked) -->
+    <div class="card vocab-card" id="vocab-card">
+        <div class="drag-handle">⋮⋮ VOCABULAR ⋮⋮</div>
+        
+        <div class="vocab-item">
+            <div class="word" id="word1"></div>
+            <div class="meaning" id="meaning1"></div>
+            <div class="example" id="vocab1-ex1"></div>
+        </div>
+        
+        <div class="vocab-item">
+            <div class="word" id="word2"></div>
+            <div class="meaning" id="meaning2"></div>
+            <div class="example" id="vocab2-ex1"></div>
+        </div>
+
+        <button onclick="showRandomWords()">Nächste Wörter ➔</button>
+    </div>
+
+    <!-- 2. GRAMMAR CARD: Fills tile completely -->
+    <div class="card grammar-card" id="grammar-card">
+        <div class="drag-handle">⋮⋮ GRAMMATIK ⋮⋮</div>
+        <div class="topic" id="topic"></div>
+        <div class="pattern" id="pattern"></div>
+        <div class="example" id="grammar-ex1"></div>
+        <div class="example" id="grammar-ex2"></div>
+        <div class="example" id="grammar-ex3"></div>
+        <div class="note" id="note"></div>
+        <button onclick="showRandomGrammar()">Nächstes Thema ➔</button>
+    </div>
+
+    <!-- 3. INFO CARD: Row 1 = News, Row 2 = Weather -->
+    <div class="card info-card" id="info-card">
+        <div class="drag-handle">⋮⋮ INFO ⋮⋮</div>
+        
+        <!-- Row 1: News -->
+        <div class="info-section">
+            <div class="section-title">📰 Nachrichten</div>
+            <div class="date" id="news-date"></div>
+            <div class="headline" id="headline"></div>
+            <div class="example" id="news-summary"></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <!-- Row 2: Weather -->
+        <div class="info-section">
+            <div class="section-title">🌤️ Wetter (Dresden)*</div>
+            <div class="weather-row">
+                <span class="weather-day">Heute</span>
+                <span class="weather-desc" id="w-desc-0">Lädt...</span>
+                <span class="weather-temp" id="w-temp-0">--°C</span>
+            </div>
+            <div class="weather-row">
+                <span class="weather-day">Morgen</span>
+                <span class="weather-desc" id="w-desc-1">Lädt...</span>
+                <span class="weather-temp" id="w-temp-1">--°C</span>
+            </div>
+            <div class="weather-row">
+                <span class="weather-day">Übermorgen</span>
+                <span class="weather-desc" id="w-desc-2">Lädt...</span>
+                <span class="weather-temp" id="w-temp-2">--°C</span>
+            </div>
+        </div>
+
+        <button onclick="refreshInfo()">Aktualisieren ➔</button>
+    </div>
+
+    <script src="vocab.js"></script>
+    <script src="grammar.js"></script>
+    
+    <script>
+        // --- DRAG LOGIC ---
+        function makeDraggable(card) {
+            let isDragging = false, startX, startY, initialLeft, initialTop;
+            card.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX; startY = e.clientY;
+                const rect = card.getBoundingClientRect();
+                initialLeft = rect.left; initialTop = rect.top;
+            });
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                card.style.left = `${initialLeft + e.clientX - startX}px`;
+                card.style.top = `${initialTop + e.clientY - startY}px`;
+            });
+            document.addEventListener('mouseup', () => { isDragging = false; });
+        }
+        makeDraggable(document.getElementById('vocab-card'));
+        makeDraggable(document.getElementById('grammar-card'));
+        makeDraggable(document.getElementById('info-card'));
+
+        // --- VOCAB LOGIC ---
+        function showRandomWords() {
+            const elements = document.querySelectorAll('.vocab-card .word, .vocab-card .meaning, .vocab-card .example');
+            elements.forEach(el => el.classList.add('fade-out'));
+            setTimeout(() => {
+                const i1 = Math.floor(Math.random() * vocab.length);
+                let i2 = Math.floor(Math.random() * vocab.length);
+                while (i2 === i1) i2 = Math.floor(Math.random() * vocab.length);
+                
+                document.getElementById('word1').textContent = vocab[i1].word;
+                document.getElementById('meaning1').textContent = vocab[i1].meaning;
+                document.getElementById('vocab1-ex1').innerHTML = "💬 " + vocab[i1].ex1;
+
+                document.getElementById('word2').textContent = vocab[i2].word;
+                document.getElementById('meaning2').textContent = vocab[i2].meaning;
+                document.getElementById('vocab2-ex1').innerHTML = "💬 " + vocab[i2].ex1;
+
+                elements.forEach(el => el.classList.remove('fade-out'));
+            }, 400);
+        }
+
+        // --- GRAMMAR LOGIC ---
+        function showRandomGrammar() {
+            const elements = document.querySelectorAll('.grammar-card .topic, .grammar-card .pattern, .grammar-card .example, .grammar-card .note');
+            elements.forEach(el => el.classList.add('fade-out'));
+            setTimeout(() => {
+                const item = grammar[Math.floor(Math.random() * grammar.length)];
+                document.getElementById('topic').textContent = item.topic;
+                document.getElementById('pattern').textContent = item.pattern;
+                document.getElementById('grammar-ex1').innerHTML = "💬 " + item.examples[0];
+                document.getElementById('grammar-ex2').innerHTML = "💬 " + item.examples[1];
+                document.getElementById('grammar-ex3').innerHTML = "💬 " + item.examples[2];
+                document.getElementById('note').innerHTML = "💡 " + item.note;
+                elements.forEach(el => el.classList.remove('fade-out'));
+            }, 400);
+        }
+
+        // --- INFO LOGIC (News + Weather) ---
+        let newsItems = [];
+        let currentNewsIndex = 0;
+
+        async function fetchNews() {
+            try {
+                const res = await fetch('https://api.rss2json.com/v1/api.json?rss_url=https://www.tagesschau.de/xml/rss2/&count=10');
+                const data = await res.json();
+                if (data.status === 'ok' && data.items.length > 0) {
+                    newsItems = data.items.map(item => ({
+                        date: item.pubDate,
+                        headline: item.title,
+                        summary: item.description.replace(/<[^>]*>/g, '').substring(0, 120) + '...'
+                    }));
+                    updateNewsUI();
+                }
+            } catch (e) {
+                document.getElementById('headline').textContent = "Feed nicht verfügbar";
+                document.getElementById('news-summary').innerHTML = "📰 Bitte Internetverbindung prüfen.";
+            }
+        }
+
+        function updateNewsUI() {
+            if (newsItems.length === 0) return;
+            const item = newsItems[currentNewsIndex];
+            document.getElementById('news-date').textContent = new Date(item.date).toLocaleDateString('de-DE', { weekday: 'short', day: 'numeric', month: 'short' });
+            document.getElementById('headline').textContent = item.headline;
+            document.getElementById('news-summary').innerHTML = "📰 " + item.summary;
+            currentNewsIndex = (currentNewsIndex + 1) % newsItems.length;
+        }
+
+        async function fetchWeather() {
+            try {
+                // Ändere 'Berlin' zu deiner Stadt, z.B. 'München' oder 'Hamburg'
+                const res = await fetch('https://wttr.in/Dresden?format=j1&lang=de');
+                const data = await res.json();
+                
+                for (let i = 0; i < 3; i++) {
+                    const day = data.weather[i];
+                    const desc = day.hourly[4].weatherDesc[0].value; // Mid-day weather
+                    const temp = day.avgtempC;
+                    document.getElementById(`w-desc-${i}`).textContent = desc;
+                    document.getElementById(`w-temp-${i}`).textContent = `${temp}°C`;
+                }
+            } catch (e) {
+                console.error("Weather fetch failed", e);
+                document.getElementById('w-desc-0').textContent = "Nicht verfügbar";
+            }
+        }
+
+        function refreshInfo() {
+            const elements = document.querySelectorAll('.info-card .headline, .info-card .example, .info-card .date, .info-card .weather-row');
+            elements.forEach(el => el.classList.add('fade-out'));
+            setTimeout(() => {
+                fetchNews();
+                fetchWeather();
+                elements.forEach(el => el.classList.remove('fade-out'));
+            }, 400);
+        }
+
+        // --- INITIALIZATION ---
+        showRandomWords();
+        showRandomGrammar();
+        refreshInfo();
+
+        // Auto-refresh timers
+        setInterval(showRandomWords, 120000);      // Vocab: 2 min
+        setInterval(showRandomGrammar, 180000);    // Grammar: 3 min
+        setInterval(refreshInfo, 300000);          // Info: 5 min
+    </script>
+</body>
+</html>

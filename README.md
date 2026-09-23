@@ -1,2 +1,2 @@
 # deutsch
-My German Tutor
+Deutsch lernen
